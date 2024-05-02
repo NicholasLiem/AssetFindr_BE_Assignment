@@ -13,7 +13,7 @@ type Post struct {
 	Category    string    `gorm:"size:100;not null" json:"category"`
 	CreatedDate time.Time `gorm:"autoCreateTime" json:"created_date"`
 	UpdatedDate time.Time `gorm:"autoUpdateTime" json:"updated_date"`
-	Status      string    `gorm:"type:varchar(100);not null;check:status in ('Publish','Draft','Thrash')" json:"status"`
+	Tags        []Tag     `gorm:"many2many:post_tags;" json:"tags"`
 }
 
 func (post *Post) TableName() string {
@@ -33,13 +33,5 @@ func (post *Post) BeforeSave(db *gorm.DB) (err error) {
 		return errors.New("the content must be at least 200 characters long")
 	}
 
-	if len(post.Category) < 3 {
-		return errors.New("the category must be at least 3 characters long")
-	}
-
-	validStatus := map[string]bool{"publish": true, "draft": true, "thrash": true}
-	if _, ok := validStatus[post.Status]; !ok {
-		return errors.New("invalid status, must be 'publish', 'draft', or 'thrash'")
-	}
 	return nil
 }

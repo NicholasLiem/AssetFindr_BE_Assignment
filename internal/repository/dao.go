@@ -2,7 +2,7 @@ package repository
 
 import (
 	"fmt"
-	"gorm.io/driver/mysql"
+	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"log"
 	"os"
@@ -25,21 +25,21 @@ func NewDAO(db *gorm.DB) DAO {
 
 func SetupDB() *gorm.DB {
 	var dbHost = os.Getenv("DB_HOST")
-	var dbName = os.Getenv("DB_NAME")
-	var dbUsername = os.Getenv("DB_USERNAME")
-	var dbPassword = os.Getenv("DB_PASSWORD")
+	var dbName = os.Getenv("POSTGRES_DB")
+	var dbUsername = os.Getenv("POSTGRES_USER")
+	var dbPassword = os.Getenv("POSTGRES_PASSWORD")
 	var dbPort = os.Getenv("DB_PORT")
 
-	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&parseTime=True&loc=Local",
-		dbUsername, dbPassword, dbHost, dbPort, dbName)
+	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable", dbHost, dbUsername, dbPassword, dbName, dbPort)
+	fmt.Println(dsn)
 
 	var db *gorm.DB
 	var err error
 	maxAttempts := 6
 	for attempts := 1; attempts <= maxAttempts; attempts++ {
-		db, err = gorm.Open(mysql.Open(dsn), &gorm.Config{})
+		db, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
 		if err == nil {
-			log.Println("[MySQL] Connected to DB instance")
+			log.Println("[PostgreSQL] Connected to DB instance")
 			sqlDB, err := db.DB()
 			if err != nil {
 				panic("Failed to get DB instance: " + err.Error())
