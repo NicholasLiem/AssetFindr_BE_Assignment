@@ -15,6 +15,7 @@ type PostQuery interface {
 	GetPost(postId uint) (*datastruct.Post, error)
 	GetAllPost() ([]*datastruct.Post, error)
 	GetTagsForPost(postID uint) ([]*datastruct.Tag, error)
+	DisassociateTagsFromPost(postID uint) error
 }
 
 type postQuery struct {
@@ -84,6 +85,10 @@ func (pq *postQuery) UpdatePostTx(postId uint, updatedPost datastruct.Post, tx *
 }
 
 func (pq *postQuery) DeletePost(postId uint) (bool, error) {
+	if err := pq.DisassociateTagsFromPost(postId); err != nil {
+		return false, err
+	}
+
 	var post datastruct.Post
 	if err := pq.pgdb.First(&post, postId).Error; err != nil {
 		return false, err
@@ -121,4 +126,11 @@ func (pq *postQuery) GetTagsForPost(postID uint) ([]*datastruct.Tag, error) {
 		return nil, err
 	}
 	return tags, nil
+}
+
+func (pq *postQuery) DisassociateTagsFromPost(postID uint) error {
+	if err := pq.pgdb.Exec("DELETE FROM post_tags WHERE post_id = ?", postID).Error; err != nil {
+		return err
+	}
+	return nil
 }

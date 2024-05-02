@@ -11,7 +11,7 @@ type Tag struct {
 	Label     string    `gorm:"size:100;not null;unique" json:"label"`
 	CreatedAt time.Time `gorm:"autoCreateTime" json:"created_at"`
 	UpdatedAt time.Time `gorm:"autoUpdateTime" json:"updated_at"`
-	Posts     []Post    `gorm:"many2many:post_tags;"`
+	Posts     []*Post   `gorm:"many2many:post_tags;"`
 }
 
 func (tag *Tag) TableName() string {
