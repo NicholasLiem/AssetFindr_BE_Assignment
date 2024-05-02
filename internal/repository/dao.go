@@ -11,15 +11,16 @@ import (
 
 type DAO interface {
 	NewPostQuery() PostQuery
+	NewTagQuery() TagQuery
 }
 
 type dao struct {
-	mysqldb *gorm.DB
+	pgdb *gorm.DB
 }
 
 func NewDAO(db *gorm.DB) DAO {
 	return &dao{
-		mysqldb: db,
+		pgdb: db,
 	}
 }
 
@@ -55,5 +56,8 @@ func SetupDB() *gorm.DB {
 }
 
 func (d *dao) NewPostQuery() PostQuery {
-	return NewPostQuery(d.mysqldb)
+	return NewPostQuery(d.pgdb)
+}
+func (d *dao) NewTagQuery() TagQuery {
+	return NewTagQuery(d.pgdb)
 }

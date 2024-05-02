@@ -1,6 +1,7 @@
 package app
 
 import (
+	"fmt"
 	"github.com/NicholasLiem/AssetFindr_BackendAssignment/internal/datastruct"
 	"github.com/NicholasLiem/AssetFindr_BackendAssignment/utils"
 	"github.com/gin-gonic/gin"
@@ -32,9 +33,10 @@ func (m *MicroserviceServer) GetPost(c *gin.Context) {
 		return
 	}
 
-	result, httpErr := m.postService.GetPost(*parsedPostId)
+	result, httpErr := m.postService.GetPostWithTag(*parsedPostId)
+	fmt.Println(result)
 	if httpErr != nil {
-		c.JSON(httpErr.StatusCode, gin.H{"error": httpErr.Message})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not retrieve post"})
 		return
 	}
 
@@ -84,9 +86,9 @@ func (m *MicroserviceServer) DeletePost(c *gin.Context) {
 }
 
 func (m *MicroserviceServer) GetAllPost(c *gin.Context) {
-	result, httpErr := m.postService.GetAllPost()
+	result, httpErr := m.postService.GetAllPostWithTags()
 	if httpErr != nil {
-		c.JSON(httpErr.StatusCode, gin.H{"error": httpErr.Message})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not retrieve posts"})
 		return
 	}
 
