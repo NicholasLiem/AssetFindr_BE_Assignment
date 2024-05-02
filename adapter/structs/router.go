@@ -1,11 +1,6 @@
-package router
+package structs
 
 import "net/http"
-
-/**
-Route Struct
-Source code: https://github.com/hellojebus/go-mux-jwt-boilerplate
-*/
 
 var AppRoutes []RoutePrefix
 
@@ -19,5 +14,5 @@ type Route struct {
 	Method      string
 	Pattern     string
 	HandlerFunc http.HandlerFunc
-	Protected   bool
+	JSONRequest bool
 }
