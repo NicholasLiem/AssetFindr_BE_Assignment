@@ -1,160 +1,94 @@
 package app
 
 import (
-	"encoding/json"
 	"github.com/NicholasLiem/AssetFindr_BackendAssignment/internal/datastruct"
 	"github.com/NicholasLiem/AssetFindr_BackendAssignment/utils"
-	"github.com/gorilla/mux"
+	"github.com/gin-gonic/gin"
 	"net/http"
 )
 
-func (m *MicroserviceServer) CreatePost(rw http.ResponseWriter, r *http.Request) {
+func (m *MicroserviceServer) CreatePost(c *gin.Context) {
 	var post datastruct.Post
-
-	if err := json.NewDecoder(r.Body).Decode(&post); err != nil {
-		http.Error(rw, "Invalid request payload", http.StatusBadRequest)
+	if err := c.ShouldBindJSON(&post); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request payload"})
 		return
 	}
 
 	result, httpErr := m.postService.CreatePost(post)
 	if httpErr != nil {
-		http.Error(rw, httpErr.Message, httpErr.StatusCode)
+		c.JSON(httpErr.StatusCode, gin.H{"error": httpErr.Message})
 		return
 	}
 
-	rw.WriteHeader(http.StatusCreated)
-	if err := json.NewEncoder(rw).Encode(result); err != nil {
-		http.Error(rw, err.Error(), http.StatusInternalServerError)
-		return
-	}
+	c.JSON(http.StatusCreated, result)
 }
 
-func (m *MicroserviceServer) GetPost(rw http.ResponseWriter, r *http.Request) {
-	params := mux.Vars(r)
-	postId := params["id"]
+func (m *MicroserviceServer) GetPost(c *gin.Context) {
+	postId := c.Param("id")
 
 	parsedPostId, err := utils.ParseStrToUint(postId)
 	if err != nil {
-		http.Error(rw, "Invalid post id", http.StatusBadRequest)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid post id"})
 		return
 	}
 
 	result, httpErr := m.postService.GetPost(*parsedPostId)
 	if httpErr != nil {
-		http.Error(rw, httpErr.Message, httpErr.StatusCode)
+		c.JSON(httpErr.StatusCode, gin.H{"error": httpErr.Message})
 		return
 	}
 
-	if err := json.NewEncoder(rw).Encode(result); err != nil {
-		http.Error(rw, err.Error(), http.StatusInternalServerError)
-		return
-	}
+	c.JSON(http.StatusOK, result)
 }
 
-func (m *MicroserviceServer) UpdatePost(rw http.ResponseWriter, r *http.Request) {
-	params := mux.Vars(r)
-	postId := params["id"]
+func (m *MicroserviceServer) UpdatePost(c *gin.Context) {
+	postId := c.Param("id")
 
 	parsedPostId, err := utils.ParseStrToUint(postId)
 	if err != nil {
-		http.Error(rw, "Invalid post id", http.StatusBadRequest)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid post id"})
 		return
 	}
 
 	var updatedPost datastruct.Post
-	if err := json.NewDecoder(r.Body).Decode(&updatedPost); err != nil {
-		http.Error(rw, "Invalid request payload", http.StatusBadRequest)
+	if err := c.ShouldBindJSON(&updatedPost); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request payload"})
 		return
 	}
 
 	result, httpErr := m.postService.UpdatePost(*parsedPostId, updatedPost)
 	if httpErr != nil {
-		http.Error(rw, httpErr.Message, httpErr.StatusCode)
+		c.JSON(httpErr.StatusCode, gin.H{"error": httpErr.Message})
 		return
 	}
 
-	if err := json.NewEncoder(rw).Encode(result); err != nil {
-		http.Error(rw, err.Error(), http.StatusInternalServerError)
-		return
-	}
+	c.JSON(http.StatusOK, result)
 }
 
-func (m *MicroserviceServer) DeletePost(rw http.ResponseWriter, r *http.Request) {
-	params := mux.Vars(r)
-	postId := params["id"]
+func (m *MicroserviceServer) DeletePost(c *gin.Context) {
+	postId := c.Param("id")
 
 	parsedPostId, err := utils.ParseStrToUint(postId)
 	if err != nil {
-		http.Error(rw, "Invalid post id", http.StatusBadRequest)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid post id"})
 		return
 	}
 
 	result, httpErr := m.postService.DeletePost(*parsedPostId)
 	if httpErr != nil {
-		http.Error(rw, httpErr.Message, httpErr.StatusCode)
+		c.JSON(httpErr.StatusCode, gin.H{"error": httpErr.Message})
 		return
 	}
 
-	rw.WriteHeader(http.StatusOK)
-	if err := json.NewEncoder(rw).Encode(result); err != nil {
-		http.Error(rw, err.Error(), http.StatusInternalServerError)
-		return
-	}
+	c.JSON(http.StatusOK, result)
 }
 
-func (m *MicroserviceServer) GetPagedPost(rw http.ResponseWriter, r *http.Request) {
-	params := mux.Vars(r)
-	limit := params["limit"]
-	offset := params["offset"]
-
-	parsedLimit, err := utils.ParseStrToInt(limit)
-	if err != nil {
-		http.Error(rw, "Invalid limit number", http.StatusBadRequest)
-		return
-	}
-
-	parsedOffset, err := utils.ParseStrToInt(offset)
-	if err != nil {
-		http.Error(rw, "Invalid post id", http.StatusBadRequest)
-		return
-	}
-
-	pagedPosts, httpErr := m.postService.GetPagedPost(*parsedLimit, *parsedOffset)
-	if httpErr != nil {
-		http.Error(rw, httpErr.Message, httpErr.StatusCode)
-		return
-	}
-
-	totalPages := (pagedPosts.TotalCount + *parsedLimit - 1) / *parsedLimit
-	currentPage := *parsedOffset / *parsedLimit + 1
-
-	response := struct {
-		Posts       []datastruct.Post `json:"posts"`
-		TotalPages  int               `json:"totalPages"`
-		CurrentPage int               `json:"currentPage"`
-	}{
-		Posts:       pagedPosts.Posts,
-		TotalPages:  totalPages,
-		CurrentPage: currentPage,
-	}
-
-	rw.Header().Set("Content-Type", "application/json")
-	rw.WriteHeader(http.StatusOK)
-	if err := json.NewEncoder(rw).Encode(response); err != nil {
-		http.Error(rw, err.Error(), http.StatusInternalServerError)
-		return
-	}
-}
-
-func (m *MicroserviceServer) GetAllPost(rw http.ResponseWriter, r *http.Request) {
+func (m *MicroserviceServer) GetAllPost(c *gin.Context) {
 	result, httpErr := m.postService.GetAllPost()
 	if httpErr != nil {
-		http.Error(rw, httpErr.Message, httpErr.StatusCode)
+		c.JSON(httpErr.StatusCode, gin.H{"error": httpErr.Message})
 		return
 	}
 
-	if err := json.NewEncoder(rw).Encode(result); err != nil {
-		http.Error(rw, err.Error(), http.StatusInternalServerError)
-		return
-	}
+	c.JSON(http.StatusOK, result)
 }

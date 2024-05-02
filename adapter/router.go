@@ -5,34 +5,36 @@ import (
 	"github.com/NicholasLiem/AssetFindr_BackendAssignment/adapter/routes"
 	"github.com/NicholasLiem/AssetFindr_BackendAssignment/adapter/structs"
 	"github.com/NicholasLiem/AssetFindr_BackendAssignment/internal/app"
-	"github.com/gorilla/mux"
-	"net/http"
+	"github.com/gin-gonic/gin"
 )
 
-func NewRouter(server app.MicroserviceServer) *mux.Router {
-	router := mux.NewRouter()
+func NewRouter(server app.MicroserviceServer) *gin.Engine {
+	router := gin.Default()
 
-	structs.AppRoutes = append(structs.AppRoutes, routes.ArticleRoutes(server))
-	for _, route := range structs.AppRoutes {
+	structs.AppRoutes = append(structs.AppRoutes, routes.PostRoutes(server))
+	for _, routePrefix := range structs.AppRoutes {
+		group := router.Group(routePrefix.Prefix)
 
-		//create sub route
-		routePrefix := router.PathPrefix(route.Prefix).Subrouter()
+		for _, route := range routePrefix.SubRoutes {
+			ginHandler := route.HandlerFunc
 
-		//for each sub route
-		for _, subRoute := range route.SubRoutes {
-
-			var handler http.Handler
-			handler = subRoute.HandlerFunc
-
-			if subRoute.JSONRequest {
-				handler = middleware.JSONMiddleware(subRoute.HandlerFunc) // use middleware
+			if route.JSONRequest {
+				ginHandler = middleware.ApplyJSONMiddleware(ginHandler)
 			}
 
-			//register the route
-			routePrefix.Path(subRoute.Pattern).Handler(handler).Methods(subRoute.Method).Name(subRoute.Name)
+			switch route.Method {
+			case "GET":
+				group.GET(route.Pattern, ginHandler)
+			case "POST":
+				group.POST(route.Pattern, ginHandler)
+			case "PATCH":
+				group.PATCH(route.Pattern, ginHandler)
+			case "DELETE":
+				group.DELETE(route.Pattern, ginHandler)
+			case "PUT":
+				group.PUT(route.Pattern, ginHandler)
+			}
 		}
-
 	}
-
 	return router
 }

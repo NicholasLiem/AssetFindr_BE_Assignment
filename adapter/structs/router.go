@@ -1,6 +1,8 @@
 package structs
 
-import "net/http"
+import (
+	"github.com/gin-gonic/gin"
+)
 
 var AppRoutes []RoutePrefix
 
@@ -13,6 +15,6 @@ type Route struct {
 	Name        string
 	Method      string
 	Pattern     string
-	HandlerFunc http.HandlerFunc
+	HandlerFunc gin.HandlerFunc
 	JSONRequest bool
 }

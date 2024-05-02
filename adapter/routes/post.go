@@ -5,9 +5,9 @@ import (
 	"github.com/NicholasLiem/AssetFindr_BackendAssignment/internal/app"
 )
 
-func ArticleRoutes(server app.MicroserviceServer) structs.RoutePrefix {
+func PostRoutes(server app.MicroserviceServer) structs.RoutePrefix {
 	return structs.RoutePrefix{
-		Prefix: "/article",
+		Prefix: "/api/posts",
 		SubRoutes: []structs.Route{
 			{
 				"Create a new article",
@@ -19,35 +19,28 @@ func ArticleRoutes(server app.MicroserviceServer) structs.RoutePrefix {
 			{
 				"Get all posts data",
 				"GET",
-				"/all",
+				"",
 				server.GetAllPost,
-				true,
-			},
-			{
-				"Show article with paging",
-				"GET",
-				"/{limit}/{offset}",
-				server.GetPagedPost,
-				true,
+				false,
 			},
 			{
 				"Show article with a specific id",
 				"GET",
-				"/{id}",
+				"/:id",
 				server.GetPost,
-				true,
+				false,
 			},
 			{
 				"Update article with new data",
-				"PATCH",
-				"/{id}",
+				"PUT",
+				"/:id",
 				server.UpdatePost,
 				true,
 			},
 			{
 				"Delete article with specific id",
 				"DELETE",
-				"/{id}",
+				"/:id",
 				server.DeletePost,
 				true,
 			},

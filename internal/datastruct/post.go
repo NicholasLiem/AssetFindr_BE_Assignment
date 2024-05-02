@@ -10,19 +10,13 @@ type Post struct {
 	ID          uint      `gorm:"primaryKey;autoIncrement" json:"id"`
 	Title       string    `gorm:"size:200;not null" json:"title"`
 	Content     string    `gorm:"type:text;not null" json:"content"`
-	Category    string    `gorm:"size:100;not null" json:"category"`
 	CreatedDate time.Time `gorm:"autoCreateTime" json:"created_date"`
 	UpdatedDate time.Time `gorm:"autoUpdateTime" json:"updated_date"`
-	Tags        []Tag     `gorm:"many2many:post_tags;" json:"tags"`
+	//Tags        []Tag     `gorm:"many2many:post_tags;" json:"tags"`
 }
 
 func (post *Post) TableName() string {
 	return "posts"
-}
-
-type PagedPosts struct {
-	Posts      []Post
-	TotalCount int
 }
 
 func (post *Post) BeforeSave(db *gorm.DB) (err error) {
