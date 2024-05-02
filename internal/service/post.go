@@ -2,6 +2,7 @@ package service
 
 import (
 	"errors"
+	"fmt"
 	"github.com/NicholasLiem/AssetFindr_BackendAssignment/internal/datastruct"
 	"github.com/NicholasLiem/AssetFindr_BackendAssignment/internal/repository"
 	"github.com/NicholasLiem/AssetFindr_BackendAssignment/utils"
@@ -87,6 +88,8 @@ func (ps *postService) UpdatePost(postID uint, updatedPost datastruct.Post) (boo
 			}
 		}
 
+		fmt.Println("Tag before update:", tag)
+
 		var found bool
 		for _, existingTag := range existingPost.Tags {
 			if existingTag.ID == tag.ID {
@@ -98,6 +101,8 @@ func (ps *postService) UpdatePost(postID uint, updatedPost datastruct.Post) (boo
 		if !found {
 			existingPost.Tags = append(existingPost.Tags, tag)
 		}
+
+		fmt.Println("Tag after update:", tag)
 	}
 
 	existingPost.Title = updatedPost.Title

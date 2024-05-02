@@ -49,27 +49,37 @@ func (pq *postQuery) CreatePostTx(post datastruct.Post, tx *gorm.DB) (bool, erro
 
 func (pq *postQuery) UpdatePost(postId uint, updatedPost datastruct.Post) (bool, error) {
 	var post datastruct.Post
-	if err := pq.pgdb.First(&post, postId).Error; err != nil {
+	if err := pq.pgdb.Preload("Tags").First(&post, postId).Error; err != nil {
 		return false, err
 	}
 
-	result := pq.pgdb.Model(&post).Updates(updatedPost)
-	if result.Error != nil {
-		return false, result.Error
+	post.Title = updatedPost.Title
+	post.Content = updatedPost.Content
+
+	post.Tags = updatedPost.Tags
+
+	if err := pq.pgdb.Save(&post).Error; err != nil {
+		return false, err
 	}
+
 	return true, nil
 }
 
 func (pq *postQuery) UpdatePostTx(postId uint, updatedPost datastruct.Post, tx *gorm.DB) (bool, error) {
 	var post datastruct.Post
-	if err := tx.First(&post, postId).Error; err != nil {
+	if err := tx.Preload("Tags").First(&post, postId).Error; err != nil {
 		return false, err
 	}
 
-	result := tx.Model(&post).Updates(updatedPost)
-	if result.Error != nil {
-		return false, result.Error
+	post.Title = updatedPost.Title
+	post.Content = updatedPost.Content
+
+	post.Tags = updatedPost.Tags
+
+	if err := tx.Save(&post).Error; err != nil {
+		return false, err
 	}
+
 	return true, nil
 }
 
