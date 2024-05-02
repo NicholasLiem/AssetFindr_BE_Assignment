@@ -42,7 +42,7 @@ func PostRoutes(server app.MicroserviceServer) structs.RoutePrefix {
 				"DELETE",
 				"/:id",
 				server.DeletePost,
-				true,
+				false,
 			},
 		},
 	}

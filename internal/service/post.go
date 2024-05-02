@@ -1,9 +1,11 @@
 package service
 
 import (
+	"errors"
 	"github.com/NicholasLiem/AssetFindr_BackendAssignment/internal/datastruct"
 	"github.com/NicholasLiem/AssetFindr_BackendAssignment/internal/repository"
 	"github.com/NicholasLiem/AssetFindr_BackendAssignment/utils"
+	"gorm.io/gorm"
 	"net/http"
 )
 
@@ -13,7 +15,7 @@ type PostService interface {
 	DeletePost(postID uint) (bool, *utils.HttpError)
 	GetPost(postID uint) (*datastruct.Post, *utils.HttpError)
 	GetPostWithTag(postID uint) (*datastruct.Post, error)
-	GetAllPost() (*[]datastruct.Post, *utils.HttpError)
+	GetAllPost() ([]*datastruct.Post, *utils.HttpError)
 	GetTagsForPost(post *datastruct.Post) ([]*datastruct.Tag, error)
 	GetAllPostWithTags() ([]*datastruct.Post, error)
 }
@@ -63,7 +65,45 @@ func (ps *postService) UpdatePost(postID uint, updatedPost datastruct.Post) (boo
 		return false, &utils.HttpError{Message: "Error starting database transaction", StatusCode: http.StatusInternalServerError}
 	}
 
-	_, err := ps.dao.NewPostQuery().UpdatePostTx(postID, updatedPost, tx)
+	existingPost, err := ps.dao.NewPostQuery().GetPost(postID)
+	if err != nil {
+		tx.Rollback()
+		return false, &utils.HttpError{Message: "Error retrieving existing post: " + err.Error(), StatusCode: http.StatusInternalServerError}
+	}
+
+	tagQuery := ps.dao.NewTagQuery()
+	for _, newTag := range updatedPost.Tags {
+		tag, err := tagQuery.FindTagByLabel(newTag.Label)
+		if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+			tx.Rollback()
+			return false, &utils.HttpError{Message: "Error checking tag existence: " + err.Error(), StatusCode: http.StatusInternalServerError}
+		}
+
+		if tag == nil {
+			tag = &datastruct.Tag{Label: newTag.Label}
+			if _, err := tagQuery.CreateTagTx(*tag, tx); err != nil {
+				tx.Rollback()
+				return false, &utils.HttpError{Message: "Error creating new tag: " + err.Error(), StatusCode: http.StatusInternalServerError}
+			}
+		}
+
+		var found bool
+		for _, existingTag := range existingPost.Tags {
+			if existingTag.ID == tag.ID {
+				found = true
+				break
+			}
+		}
+
+		if !found {
+			existingPost.Tags = append(existingPost.Tags, tag)
+		}
+	}
+
+	existingPost.Title = updatedPost.Title
+	existingPost.Content = updatedPost.Content
+
+	_, err = ps.dao.NewPostQuery().UpdatePostTx(postID, *existingPost, tx)
 	if err != nil {
 		tx.Rollback()
 		return false, &utils.HttpError{Message: "Error updating post: " + err.Error(), StatusCode: http.StatusInternalServerError}
@@ -96,7 +136,7 @@ func (ps *postService) GetPost(postID uint) (*datastruct.Post, *utils.HttpError)
 	return post, nil
 }
 
-func (ps *postService) GetAllPost() (*[]datastruct.Post, *utils.HttpError) {
+func (ps *postService) GetAllPost() ([]*datastruct.Post, *utils.HttpError) {
 	posts, err := ps.dao.NewPostQuery().GetAllPost()
 	if err != nil {
 		return nil, &utils.HttpError{Message: "Error getting post: " +
@@ -116,19 +156,17 @@ func (ps *postService) GetTagsForPost(post *datastruct.Post) ([]*datastruct.Tag,
 }
 
 func (ps *postService) GetAllPostWithTags() ([]*datastruct.Post, error) {
-	postsPtr, err := ps.dao.NewPostQuery().GetAllPost()
+	posts, err := ps.dao.NewPostQuery().GetAllPost()
 	if err != nil {
 		return nil, err
 	}
 
-	posts := make([]*datastruct.Post, len(*postsPtr))
-	for i, post := range *postsPtr {
-		posts[i] = &post
-		tags, err := ps.GetTagsForPost(&post)
+	for _, post := range posts {
+		tags, err := ps.GetTagsForPost(post)
 		if err != nil {
 			return nil, err
 		}
-		posts[i].Tags = tags
+		post.Tags = tags
 	}
 
 	return posts, nil

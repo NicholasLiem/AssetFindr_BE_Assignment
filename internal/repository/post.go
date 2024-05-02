@@ -13,7 +13,7 @@ type PostQuery interface {
 	UpdatePostTx(postId uint, updatedPost datastruct.Post, tx *gorm.DB) (bool, error)
 	DeletePost(postId uint) (bool, error)
 	GetPost(postId uint) (*datastruct.Post, error)
-	GetAllPost() (*[]datastruct.Post, error)
+	GetAllPost() ([]*datastruct.Post, error)
 	GetTagsForPost(postID uint) ([]*datastruct.Tag, error)
 }
 
@@ -94,15 +94,15 @@ func (pq *postQuery) GetPost(postId uint) (*datastruct.Post, error) {
 	return &post, nil
 }
 
-func (pq *postQuery) GetAllPost() (*[]datastruct.Post, error) {
-	var posts []datastruct.Post
+func (pq *postQuery) GetAllPost() ([]*datastruct.Post, error) {
+	var posts []*datastruct.Post
 
 	result := pq.pgdb.Find(&posts)
 	if result.Error != nil {
 		return nil, result.Error
 	}
 
-	return &posts, nil
+	return posts, nil
 }
 
 func (pq *postQuery) GetTagsForPost(postID uint) ([]*datastruct.Tag, error) {

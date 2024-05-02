@@ -24,6 +24,7 @@ func (post *Post) BeforeSave(db *gorm.DB) (err error) {
 	if len(post.Title) < 20 {
 		return errors.New("the title must be at least 20 characters long")
 	}
+
 	if len(post.Content) < 200 {
 		return errors.New("the content must be at least 200 characters long")
 	}

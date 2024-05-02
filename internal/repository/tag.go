@@ -15,6 +15,7 @@ type TagQuery interface {
 	GetTag(tagId uint) (*datastruct.Tag, error)
 	GetAllTags() ([]datastruct.Tag, error)
 	FindOrCreateTag(tagName string, tx *gorm.DB) (*datastruct.Tag, error)
+	FindTagByLabel(tagName string) (*datastruct.Tag, error)
 }
 
 type tagQuery struct {
@@ -107,6 +108,17 @@ func (tq *tagQuery) FindOrCreateTag(tagName string, tx *gorm.DB) (*datastruct.Ta
 				return nil, err
 			}
 			return &tag, nil
+		}
+		return nil, err
+	}
+	return &tag, nil
+}
+
+func (tq *tagQuery) FindTagByLabel(tagName string) (*datastruct.Tag, error) {
+	var tag datastruct.Tag
+	if err := tq.pgdb.Where("label = ?", tagName).First(&tag).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil
 		}
 		return nil, err
 	}

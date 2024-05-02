@@ -1,7 +1,6 @@
 package app
 
 import (
-	"fmt"
 	"github.com/NicholasLiem/AssetFindr_BackendAssignment/internal/datastruct"
 	"github.com/NicholasLiem/AssetFindr_BackendAssignment/utils"
 	"github.com/gin-gonic/gin"
@@ -34,7 +33,6 @@ func (m *MicroserviceServer) GetPost(c *gin.Context) {
 	}
 
 	result, httpErr := m.postService.GetPostWithTag(*parsedPostId)
-	fmt.Println(result)
 	if httpErr != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not retrieve post"})
 		return
